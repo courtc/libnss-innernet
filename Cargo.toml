@@ -1,0 +1,17 @@
+[package]
+name = "libnss-innernet"
+version = "0.1.0"
+edition = "2021"
+description = "Innernet NSS host module"
+
+[dependencies]
+libc = "0.2"
+lazy_static = "1.4"
+libnss = "0.4"
+serde_json = "1.0.91"
+serde = "1.0.100"
+paste = "1.0.11"
+
+[lib]
+name = "nss_innernet"
+crate-type = ["cdylib"]
