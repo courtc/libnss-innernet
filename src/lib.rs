@@ -58,7 +58,7 @@ impl HostHooks for InnernetHost {
             Some(v) => v,
             None => return Response::Unavail,
         };
-        if (Some("wg") != split.next()) || (None != split.next()) {
+        if (Some("wg") != split.next()) || split.next().is_some() {
             return Response::Unavail;
         } else if family != AddressFamily::IPv4 {
             return Response::NotFound;
@@ -80,12 +80,12 @@ struct Network {
 }
 
 impl Network {
-    fn read_config_from_file(self: &Self) -> Result<serde_json::Value> {
+    fn read_config_from_file(&self) -> Result<serde_json::Value> {
         let file = File::open(format!("/var/lib/innernet/{}.json", self.name))?;
         Ok(serde_json::from_reader(BufReader::new(file))?)
     }
 
-    fn host_from_peer(self: &Self, peer: &serde_json::Value) -> Option<Host> {
+    fn host_from_peer(&self, peer: &serde_json::Value) -> Option<Host> {
         if let Some(ipstr) = peer["ip"].as_str() {
             if let Ok(ip) = ipstr.parse() {
                 return Some(Host {
@@ -98,7 +98,7 @@ impl Network {
         None
     }
 
-    fn collect_hosts(self: &Self, out: &mut Vec<Host>) {
+    fn collect_hosts(&self, out: &mut Vec<Host>) {
         if let Ok(info) = self.read_config_from_file() {
             if let Some(peers) = info["peers"].as_array() {
                 for peer in peers {
@@ -110,7 +110,7 @@ impl Network {
         }
     }
 
-    fn host_by_name(self: &Self, name: &str) -> Result<Option<Host>> {
+    fn host_by_name(&self, name: &str) -> Result<Option<Host>> {
         let info = self.read_config_from_file()?;
         if let Some(peers) = info["peers"].as_array() {
             for peer in peers {
@@ -122,7 +122,7 @@ impl Network {
         Ok(None)
     }
 
-    fn host_by_addr(self: &Self, addr: IpAddr) -> Result<Option<Host>> {
+    fn host_by_addr(&self, addr: IpAddr) -> Result<Option<Host>> {
         let info = self.read_config_from_file()?;
         if let Some(peers) = info["peers"].as_array() {
             for peer in peers {
@@ -138,14 +138,12 @@ impl Network {
 
 fn get_networks() -> Result<Vec<Network>> {
     let mut networks = vec![];
-    for entry in std::fs::read_dir("/etc/innernet")? {
-        if let Ok(entry) = entry {
-            if entry.path().is_file() {
-                if let Some(fname) = entry.file_name().to_str() {
-                    networks.push(Network {
-                        name: fname.trim_end_matches(".conf").into(),
-                    });
-                }
+    for entry in std::fs::read_dir("/etc/innernet")?.flatten() {
+        if entry.path().is_file() {
+            if let Some(fname) = entry.file_name().to_str() {
+                networks.push(Network {
+                    name: fname.trim_end_matches(".conf").into(),
+                });
             }
         }
     }
