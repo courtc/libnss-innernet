@@ -102,6 +102,9 @@ impl Network {
         if let Ok(info) = self.read_config_from_file() {
             if let Some(peers) = info["peers"].as_array() {
                 for peer in peers {
+                    if peer["is_disabled"].as_bool().unwrap_or(true) {
+                        continue;
+                    }
                     if let Some(host) = self.host_from_peer(peer) {
                         out.push(host)
                     }
@@ -114,6 +117,9 @@ impl Network {
         let info = self.read_config_from_file()?;
         if let Some(peers) = info["peers"].as_array() {
             for peer in peers {
+                if peer["is_disabled"].as_bool().unwrap_or(true) {
+                    continue;
+                }
                 if peer["name"].as_str() == Some(name) {
                     return Ok(self.host_from_peer(peer));
                 }
@@ -126,6 +132,9 @@ impl Network {
         let info = self.read_config_from_file()?;
         if let Some(peers) = info["peers"].as_array() {
             for peer in peers {
+                if peer["is_disabled"].as_bool().unwrap_or(true) {
+                    continue;
+                }
                 let peer_addr = peer["ip"].as_str().unwrap_or("").parse();
                 if peer_addr == Ok(addr) {
                     return Ok(self.host_from_peer(peer));
